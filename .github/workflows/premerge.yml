@@ -10,6 +10,9 @@ jobs:
     permissions:
       pull-requests: write
     steps:
+      # Local path actions (`./github_action`) need the repo checked out
+      # first so the runner has action.yml on disk to read.
+      - uses: actions/checkout@v4
       - uses: ./github_action
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
