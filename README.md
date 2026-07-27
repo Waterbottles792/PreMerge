@@ -127,3 +127,5 @@ multi-repo validation study (precision/recall against real OSS merge
 history), SRS/design/test-plan docs, and the ML-based scoring stretch goal.
 Statistical/heuristic scoring was the deliberate v1 choice; ML is future
 work once there's a labeled dataset from the validation study.
+
+<!-- test-action-pr: trivial change to trigger the PreMerge GitHub Action -->
