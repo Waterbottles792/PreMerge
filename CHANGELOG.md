@@ -1,6 +1,6 @@
 # Changelog
 
-## 2026-07-27 — Initial v1 build
+## 2026-07-27 — Vikram
 
 Built the PreMerge MVP end to end: a CLI + GitHub Action that predicts merge
 conflicts before they happen by combining historical file-coupling analysis
@@ -54,3 +54,7 @@ with live branch-diff overlap.
 **Not yet built** (see `plan.md` "Future Work" / Phase 6-7): the multi-repo
 precision/recall validation study, `docs/SRS.md` / `design.md` /
 `test-plan.md`, and the ML-based scoring stretch goal.
+
+## YYYY-MM-DD — (friend's name)
+
+_to be filled in_
