@@ -1,0 +1,15 @@
+name: PreMerge Conflict Risk Check
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  premerge:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - uses: ./github_action
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
