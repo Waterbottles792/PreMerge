@@ -1,0 +1,7 @@
+{
+  "weights": {
+    "line_overlap": 0.5,
+    "file_overlap": 0.3,
+    "coupling": 0.2
+  }
+}
