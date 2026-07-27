@@ -1,4 +1,4 @@
-# PreMerge
+## PreMerge
 
 Predicts merge conflicts *before* they happen, by analyzing git history and
 live branch diffs instead of waiting for `git merge` to fail.
