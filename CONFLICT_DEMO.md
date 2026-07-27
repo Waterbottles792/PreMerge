@@ -1,3 +1,3 @@
 # Conflict Demo
 
-status: original
+status: landed-to-main-version
