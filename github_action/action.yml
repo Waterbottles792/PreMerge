@@ -1,0 +1,44 @@
+name: "PreMerge Conflict Risk Check"
+description: "Predicts merge-conflict risk between a PR's branch and its base by analyzing git history coupling and live branch divergence, then comments on the PR."
+inputs:
+  github-token:
+    description: "Token used to read/post the PR comment (usually secrets.GITHUB_TOKEN)."
+    required: true
+  base-ref:
+    description: "Base branch to compare against."
+    required: false
+    default: ${{ github.event.pull_request.base.ref }}
+  head-ref:
+    description: "Head branch being merged."
+    required: false
+    default: ${{ github.event.pull_request.head.ref }}
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+    - name: Install PreMerge
+      shell: bash
+      run: pip install "premerge @ git+https://github.com/Waterbottles792/PreMerge.git"
+    - name: Fetch base and head branches
+      shell: bash
+      run: git fetch origin "${{ inputs.base-ref }}" "${{ inputs.head-ref }}"
+    - name: Run PreMerge analysis
+      shell: bash
+      run: >
+        premerge analyze
+        "origin/${{ inputs.base-ref }}"
+        "origin/${{ inputs.head-ref }}"
+        --json > premerge_report.json
+    - name: Post PR comment
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        REPORT_PATH: premerge_report.json
+        REPO: ${{ github.repository }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+      run: python "${{ github.action_path }}/post_comment.py"
