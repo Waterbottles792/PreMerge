@@ -7,6 +7,7 @@ which ships as a CLI and a GitHub Action. These wireframes define the interface
 should the dashboard be built.
 **Fidelity:** Low — structure, hierarchy and flow only. No colour, typography,
 spacing, iconography or final copy. All data shown is placeholder.
+**Figma:** [Conflict Risk Dashboard](https://www.figma.com/design/CeB8cRjy4jC3VaYn2FjIk2/Conflict-Risk-Dashboard?node-id=0-1&p=f&t=ZHQxA9wcZdzwtEkJ-0) — all 6 screens built from this spec.
 
 ---
 

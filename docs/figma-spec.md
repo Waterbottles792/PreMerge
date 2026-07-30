@@ -5,6 +5,7 @@
 **Target:** Desktop **1440 × 1024**
 **Fidelity:** High — exact frames, coordinates, sizes, tokens and labels. Every
 value below is directly enterable in Figma.
+**Built file:** [Conflict Risk Dashboard](https://www.figma.com/design/CeB8cRjy4jC3VaYn2FjIk2/Conflict-Risk-Dashboard?node-id=0-1&p=f&t=ZHQxA9wcZdzwtEkJ-0)
 
 All coordinates are **absolute within the 1440 × 1024 frame**, matching what
 Figma's X/Y inspector displays. Sizes are `width × height` in px.
