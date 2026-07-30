@@ -133,7 +133,9 @@ always-available answer — in the terminal, in CI, and eventually in the editor
 
 Feature scope and priority are documented in
 [docs/MoSCoW.md](docs/MoSCoW.md) — all Must Have requirements are implemented in
-v1.
+v1. The proposed web dashboard (C1) is wireframed in
+[docs/wireframes.md](docs/wireframes.md) and built out in Figma:
+[Conflict Risk Dashboard](https://www.figma.com/design/CeB8cRjy4jC3VaYn2FjIk2/Conflict-Risk-Dashboard?node-id=0-1&p=f&t=ZHQxA9wcZdzwtEkJ-0).
 
 ---
 
@@ -214,6 +216,8 @@ comparing PreMerge's pre-merge prediction against the actual outcome. They are
 ---
 
 ## 10. Project Architecture
+
+Full diagram (with containerization and deployment): [`docs/PreMergeArchitecture.drawio`](docs/PreMergeArchitecture.drawio) / [rendered PNG](docs/PreMergeArchitecture.drawio.png).
 
 ```
                      ┌──────────────────────────────┐
@@ -329,6 +333,32 @@ jobs:
 ---
 
 ## 12. Quick Start – Local Development
+
+**Run with Docker** (no local Python setup needed)
+
+```bash
+docker build -t premerge .
+
+# Analyze the repo you're standing in
+docker run --rm -v "$(pwd)":/repo premerge analyze --repo /repo
+
+# Any other repo on disk
+docker run --rm -v /path/to/other/repo:/repo premerge analyze --repo /repo
+```
+
+The image bundles Python, `git`, and the CLI. `-v "$(pwd)":/repo` mounts your
+repo into the container read/write at `/repo`; PreMerge never needs network
+access, so no other flags are required.
+
+**Local development tools**
+
+- **Python 3.11+** — the only runtime dependency; `pyproject.toml` pins `click`
+  and `rich`.
+- **git** — PreMerge shells out to the real `git` binary rather than a
+  library, so any recent git works.
+- **pytest** — the test suite (see below); no other dev tooling (linters,
+  formatters) is currently enforced.
+- **Docker** — optional, for the containerized path above.
 
 **Run the analyzer**
 
