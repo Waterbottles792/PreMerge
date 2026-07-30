@@ -1,7 +1,58 @@
-.venv/
+# ---- Python ----
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
+*.so
+
+# ---- Virtual environments ----
+.venv/
+venv/
+ENV/
+env/
+
+# ---- Packaging / build ----
+build/
+dist/
+*.egg
 *.egg-info/
+pip-wheel-metadata/
+
+# ---- Testing & coverage ----
 .pytest_cache/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+.tox/
+.nox/
+
+# ---- Type checkers & linters ----
+.mypy_cache/
+.ruff_cache/
+.pytype/
+
+# ---- PreMerge runtime artifacts ----
+# Coupling cache: regenerated from git history, keyed by HEAD commit.
 .premerge_cache.sqlite
+# CLI --json output consumed by the GitHub Action.
 premerge_report.json
+
+# ---- Local configuration ----
+# The committed premerge.config.json is the shared default; local overrides
+# are personal and must not be committed.
+premerge.config.local.json
+.env
+.env.*
+!.env.example
+
+# ---- Editors & IDEs ----
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ---- OS cruft ----
+.DS_Store
+Thumbs.db
+desktop.ini
