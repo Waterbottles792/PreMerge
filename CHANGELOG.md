@@ -55,6 +55,58 @@ with live branch-diff overlap.
 precision/recall validation study, `docs/SRS.md` / `design.md` /
 `test-plan.md`, and the ML-based scoring stretch goal.
 
-## YYYY-MM-DD — (friend's name)
+## 2026-07-30 — Kanika
 
-_to be filled in_
+Added the project documentation and design artifacts (PR #28,
+`feature/project-documentation` → `main`).
+
+**Docs**
+- `README.md` — restructured into 16 sections; documents the GitHub Flow
+  branching strategy (§13) and the project's folder structure (§14)
+- `docs/MoSCoW.md` — Must/Should/Could/Won't requirements prioritization,
+  every item mapped to its implementation status
+- `docs/wireframes.md` — low-fidelity wireframes for the six proposed web
+  dashboard screens (Login, Dashboard, Repositories, Risk Report, Coupling,
+  Settings)
+- `docs/figma-spec.md` — high-fidelity Figma-ready spec derived from the
+  wireframes (frames, tokens, coordinates)
+- `docs/dashboard-spec.md`, `docs/screenshots/README.md` — supporting design
+  and evidence-capture docs
+
+**CI / process**
+- `.github/workflows/tests.yml` — pytest on Python 3.11 and 3.12
+- `.github/pull_request_template.md`, `CONTRIBUTING.md` — PR template and
+  contributor guide documenting the GitHub Flow process end to end
+- Expanded `.gitignore` for build, coverage, and editor artifacts
+
+**Cleanup**
+- Removed a stray leftover `ponytail:` comment prefix from `coupling.py` and
+  `git_utils.py`
+
+## 2026-07-30 — Vikram
+
+Added Docker support and closed out the remaining design/documentation gaps
+(PR #29, `feature/docker-and-docs` → `main`).
+
+**Docker**
+- `Dockerfile` + `.dockerignore` — containerizes the CLI (Python 3.13-slim +
+  `git`); verified `docker build` / `docker run ... analyze` end-to-end
+  against this repo
+- Fixed a real git "dubious ownership" failure when the container (running
+  as root) reads a host-owned bind-mounted repo, via
+  `git config --system --add safe.directory '*'` baked into the image
+- `README.md` §12 — Docker quick start instructions and a local
+  development tools section
+
+**Architecture diagram**
+- `docs/PreMergeArchitecture.drawio` — added the missing Containerization
+  and Deployment/Infra elements plus a legend; re-exported the stale PNG
+- Removed the dead, empty `docs/architecture_diag.png` placeholder
+- Linked the diagram from `README.md` §10
+
+**Design**
+- Built the six wireframe screens out as an actual Figma file (Conflict
+  Risk Dashboard) from `docs/figma-spec.md`; linked it from
+  `docs/wireframes.md`, `docs/figma-spec.md`, and `README.md` §6
+- `docs/user-stories.md` — the 25 GitHub Issues backing the project board,
+  with their MoSCoW labels
