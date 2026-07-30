@@ -104,9 +104,9 @@ def diff_hunks(repo: str, base: str, ref: str) -> BranchDiff:
             if not hunk_match:
                 continue
             start = int(hunk_match.group(3))
-            # ponytail: a "+c,0" hunk (pure deletion) has no "+" length; treat
-            # it as touching a single line so it can still collide with an
-            # insertion at that point in the other branch.
+            # A "+c,0" hunk (pure deletion) has no "+" length; treat it as
+            # touching a single line so it can still collide with an insertion
+            # at that point in the other branch.
             length = int(hunk_match.group(4)) if hunk_match.group(4) is not None else 1
             result.hunks[current_file].append((start, max(length, 1)))
     return result
