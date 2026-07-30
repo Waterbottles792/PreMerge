@@ -75,11 +75,11 @@ class CouplingEngine:
     def build(self) -> None:
         """Build (or load from cache) the file co-occurrence counts.
 
-        ponytail: cache key is just the current HEAD hash of `rev` — history
-        is treated as append-only, so an unchanged HEAD means an unchanged
-        cache. A rebase/force-push that rewrites history without moving HEAD
-        would serve a stale entry; delete .premerge_cache.sqlite if that ever
-        bites you.
+        The cache key is just the current HEAD hash of `rev` — history is
+        treated as append-only, so an unchanged HEAD means an unchanged cache.
+        A rebase/force-push that rewrites history without moving HEAD would
+        serve a stale entry; delete .premerge_cache.sqlite if that ever bites
+        you.
         """
         head_hash = git_utils.rev_parse(self.repo, self.rev)
         if self._load_from_cache(head_hash):
