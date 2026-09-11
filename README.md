@@ -290,7 +290,31 @@ coupling(A, B) = commits touching both A and B / commits touching A or B
 
 ---
 
-## 11. Installation
+## 11. Software Design
+
+**Diagrams:**
+
+- Architecture diagram — editable source: [`docs/design/architecture_diagram.drawio`](docs/design/updatedPreMergeArchitechture.drawio)
+- Architecture diagram — PNG export:
+
+  ![PreMerge architecture diagram](docs/design/achitecture_diagram_updated_draw.io)
+
+- UI design — Figma prototype (6 screens: Login, Dashboard, Repository Selection,
+  Risk Report, Coupling Analysis, Settings):
+ 
+  (screenshots  in [`docs/design/figma/`](docs/design/figma/))
+
+**Summary:** PreMerge is built as a layered pipeline — two independent signal
+detectors (direct overlap and historical coupling) feed a single weighted
+scoring engine, keeping each easy to test, reason about, and swap independently.
+Modules communicate only through typed dataclasses and each has a single
+responsibility, so the identical pipeline runs unchanged whether invoked locally
+or from the GitHub Action. Configuration (`config.py` / `premerge.config.json`)
+and caching (`.premerge_cache.sqlite`) are kept outside the core control flow,
+so the scoring logic itself stays stateless and transparent.
+---
+
+## 12. Installation
 
 **Prerequisites:** Python 3.11+, and `git` available on your PATH.
 
@@ -332,7 +356,7 @@ jobs:
 
 ---
 
-## 12. Quick Start – Local Development
+## 13. Quick Start – Local Development
 
 **Run with Docker** (no local Python setup needed)
 
@@ -433,7 +457,7 @@ premerge analyze demo-a demo-b
 
 ---
 
-## 13. Branching Strategy
+## 14. Branching Strategy
 
 PreMerge follows **GitHub Flow** — a single always-deployable `main`, short-lived
 branches, and every change merged through a pull request. This is the model the
@@ -508,7 +532,7 @@ the automated checks running against it.
 
 ---
 
-## 14. Folder Structure
+## 15. Folder Structure
 
 ```
 PreMerge/
@@ -556,7 +580,7 @@ PreMerge/
 
 ---
 
-## 15. Future Scope
+## 16. Future Scope
 
 **Near-term (next milestone)**
 
@@ -595,7 +619,7 @@ PreMerge/
 
 ---
 
-## 16. Contributors
+## 17. Contributors
 
 | Name | GitHub | Role |
 |---|---|---|
