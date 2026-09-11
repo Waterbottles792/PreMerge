@@ -600,7 +600,7 @@ PreMerge/
 | Name | GitHub | Role |
 |---|---|---|
 | Vikram | [@Waterbottles792](https://github.com/Waterbottles792) | Core engine — git plumbing, coupling analysis, overlap detection, scoring, CLI, GitHub Action |
-| Kanika Rathore | — | Documentation and project planning |
+| Kanika Rathore | @kanika10-hub| Documentation and project planning |
 
 See [CHANGELOG.md](CHANGELOG.md) for a dated, attributed record of what landed
 when.
