@@ -304,7 +304,8 @@ coupling(A, B) = commits touching both A and B / commits touching A or B
  
   (screenshots  in [`docs/design/figma/`](docs/design/figma/))
 
-**Summary:** PreMerge is built as a layered pipeline — two independent signal
+**Summary:**
+PreMerge is built as a layered pipeline — two independent signal
 detectors (direct overlap and historical coupling) feed a single weighted
 scoring engine, keeping each easy to test, reason about, and swap independently.
 Modules communicate only through typed dataclasses and each has a single
@@ -312,6 +313,7 @@ responsibility, so the identical pipeline runs unchanged whether invoked locally
 or from the GitHub Action. Configuration (`config.py` / `premerge.config.json`)
 and caching (`.premerge_cache.sqlite`) are kept outside the core control flow,
 so the scoring logic itself stays stateless and transparent.
+
 ---
 
 ## 12. Installation
