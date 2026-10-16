@@ -3,12 +3,12 @@
 /usr/local/lib/python3.13/dist-packages/mutmut/configuration.py:152: UserWarning: The config tests_dir is deprecated. Please add the path to pytest_add_cli_args_test_selection instead
   warnings.warn(
     premerge.report.x_print_table__mutmut_1: killed
-    premerge.report.x_print_table__mutmut_2: survived
+    premerge.report.x_print_table__mutmut_2: killed
     premerge.report.x_print_table__mutmut_3: killed
-    premerge.report.x_print_table__mutmut_4: survived
+    premerge.report.x_print_table__mutmut_4: killed
     premerge.report.x_print_table__mutmut_5: survived
-    premerge.report.x_print_table__mutmut_6: survived
-    premerge.report.x_print_table__mutmut_7: survived
+    premerge.report.x_print_table__mutmut_6: killed
+    premerge.report.x_print_table__mutmut_7: killed
     premerge.report.x_print_table__mutmut_8: killed
     premerge.report.x_print_table__mutmut_9: killed
     premerge.report.x_print_table__mutmut_10: survived
@@ -16,12 +16,12 @@
     premerge.report.x_print_table__mutmut_12: killed
     premerge.report.x_print_table__mutmut_13: killed
     premerge.report.x_print_table__mutmut_14: killed
-    premerge.report.x_print_table__mutmut_15: survived
-    premerge.report.x_print_table__mutmut_16: survived
+    premerge.report.x_print_table__mutmut_15: killed
+    premerge.report.x_print_table__mutmut_16: killed
     premerge.report.x_print_table__mutmut_17: killed
     premerge.report.x_print_table__mutmut_18: killed
-    premerge.report.x_print_table__mutmut_19: survived
-    premerge.report.x_print_table__mutmut_20: survived
+    premerge.report.x_print_table__mutmut_19: killed
+    premerge.report.x_print_table__mutmut_20: killed
     premerge.report.x_print_table__mutmut_21: killed
     premerge.report.x_print_table__mutmut_22: survived
     premerge.report.x_print_table__mutmut_23: survived
@@ -33,20 +33,20 @@
     premerge.report.x_print_table__mutmut_29: survived
     premerge.report.x_print_table__mutmut_30: killed
     premerge.report.x_print_table__mutmut_31: survived
-    premerge.report.x_print_table__mutmut_32: survived
-    premerge.report.x_print_table__mutmut_33: survived
+    premerge.report.x_print_table__mutmut_32: killed
+    premerge.report.x_print_table__mutmut_33: killed
     premerge.report.x_print_table__mutmut_34: killed
     premerge.report.x_print_table__mutmut_35: killed
-    premerge.report.x_print_table__mutmut_36: survived
+    premerge.report.x_print_table__mutmut_36: killed
     premerge.report.x_print_table__mutmut_37: killed
     premerge.report.x_print_table__mutmut_38: survived
-    premerge.report.x_print_table__mutmut_39: survived
+    premerge.report.x_print_table__mutmut_39: killed
     premerge.report.x_print_table__mutmut_40: survived
     premerge.report.x_print_table__mutmut_41: survived
-    premerge.report.x_print_table__mutmut_42: survived
-    premerge.report.x_print_table__mutmut_43: survived
-    premerge.report.x_print_table__mutmut_44: survived
-    premerge.report.x_print_table__mutmut_45: survived
+    premerge.report.x_print_table__mutmut_42: killed
+    premerge.report.x_print_table__mutmut_43: killed
+    premerge.report.x_print_table__mutmut_44: killed
+    premerge.report.x_print_table__mutmut_45: killed
     premerge.report.x_print_table__mutmut_46: killed
     premerge.report.x_print_table__mutmut_47: survived
     premerge.report.x_print_table__mutmut_48: survived
@@ -60,21 +60,21 @@
     premerge.report.x_print_table__mutmut_56: survived
     premerge.report.x_print_table__mutmut_57: survived
     premerge.report.x_print_table__mutmut_58: survived
-    premerge.report.x_print_table__mutmut_59: survived
-    premerge.report.x_print_table__mutmut_60: survived
+    premerge.report.x_print_table__mutmut_59: killed
+    premerge.report.x_print_table__mutmut_60: killed
     premerge.report.x_print_table__mutmut_61: killed
     premerge.report.x_print_table__mutmut_62: survived
-    premerge.report.x_print_table__mutmut_63: survived
+    premerge.report.x_print_table__mutmut_63: killed
     premerge.report.x_print_table__mutmut_64: killed
     premerge.report.x_print_table__mutmut_65: killed
     premerge.report.x_print_table__mutmut_66: survived
-    premerge.report.x_print_table__mutmut_67: survived
+    premerge.report.x_print_table__mutmut_67: killed
     premerge.report.x_print_table__mutmut_68: killed
     premerge.report.x_print_table__mutmut_69: killed
     premerge.report.x_print_table__mutmut_70: survived
     premerge.report.x_print_table__mutmut_71: survived
-    premerge.report.x_print_table__mutmut_72: survived
-    premerge.report.x_print_table__mutmut_73: survived
+    premerge.report.x_print_table__mutmut_72: killed
+    premerge.report.x_print_table__mutmut_73: killed
     premerge.report.x_to_json__mutmut_1: killed
     premerge.report.x_to_json__mutmut_2: killed
     premerge.report.x_to_json__mutmut_3: killed
