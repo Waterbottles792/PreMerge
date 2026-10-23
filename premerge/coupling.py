@@ -20,12 +20,18 @@ CACHE_FILENAME = ".premerge_cache.sqlite"
 class CouplingEngine:
     """Computes pairwise file coupling from commit history, with sqlite caching."""
 
-    def __init__(self, repo: str, rev: str = "HEAD", use_cache: bool = True):
+    def __init__(
+        self, repo: str, rev: str = "HEAD", use_cache: bool = True, depth: int = 0
+    ):
         self.repo = repo
         self.rev = rev
         self._use_cache = use_cache
+        self._depth = depth
         self._file_counts: Counter[str] | None = None
         self._pair_counts: Counter[tuple[str, str]] | None = None
+
+    def _cache_rev_key(self) -> str:
+        return self.rev if self._depth == 0 else f"{self.rev}@depth={self._depth}"
 
     def _cache_path(self) -> Path:
         return Path(self.repo) / CACHE_FILENAME
@@ -38,7 +44,7 @@ class CouplingEngine:
             row = conn.execute(
                 "SELECT file_counts, pair_counts FROM coupling_cache "
                 "WHERE head_hash = ? AND rev = ?",
-                (head_hash, self.rev),
+                (head_hash, self._cache_rev_key()),
             ).fetchone()
         finally:
             conn.close()
@@ -66,7 +72,7 @@ class CouplingEngine:
             )
             conn.execute(
                 "INSERT OR REPLACE INTO coupling_cache VALUES (?, ?, ?, ?)",
-                (head_hash, self.rev, json.dumps(self._file_counts), pair_json),
+                (head_hash, self._cache_rev_key(), json.dumps(self._file_counts), pair_json),
             )
             conn.commit()
         finally:
@@ -87,7 +93,7 @@ class CouplingEngine:
 
         file_counts: Counter[str] = Counter()
         pair_counts: Counter[tuple[str, str]] = Counter()
-        for files in git_utils.commit_log_with_files(self.repo, self.rev):
+        for files in git_utils.commit_log_with_files(self.repo, self.rev, max_count=self._depth):
             unique_files = sorted(set(files))
             for f in unique_files:
                 file_counts[f] += 1

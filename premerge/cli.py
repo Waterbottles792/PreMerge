@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import itertools
+import sys
 
 import click
 from rich.console import Console
@@ -30,6 +31,13 @@ def main() -> None:
 )
 @click.option("--config", "config_path", default=None, help="Path to premerge.config.json.")
 @click.option("--no-cache", is_flag=True, help="Skip the historical-coupling cache.")
+@click.option("--depth", type=int, default=0, help="Limit git log to the N most recent commits (0 = all).")
+@click.option(
+    "--fail-above",
+    type=float,
+    default=None,
+    help="Exit 1 if the highest risk score meets or exceeds this threshold (0.0–1.0). Useful as a CI gate.",
+)
 def analyze(
     branches: tuple[str, ...],
     repo: str,
@@ -37,6 +45,8 @@ def analyze(
     as_json: bool,
     config_path: str | None,
     no_cache: bool,
+    depth: int,
+    fail_above: float | None,
 ) -> None:
     """Rank branch pairs by merge-conflict risk.
 
@@ -64,7 +74,7 @@ def analyze(
         return
 
     weights = load_weights(repo, config_path)
-    coupling_engine = CouplingEngine(repo, rev="HEAD", use_cache=not no_cache)
+    coupling_engine = CouplingEngine(repo, rev="HEAD", use_cache=not no_cache, depth=depth)
 
     scores = [compute_risk(repo, a, b, weights, coupling_engine) for a, b in pairs]
     scores.sort(key=lambda s: s.score, reverse=True)
@@ -73,6 +83,12 @@ def analyze(
         click.echo(to_json(scores))
     else:
         print_table(scores, console)
+
+    if fail_above is not None and scores and scores[0].score >= fail_above:
+        console.print(
+            f"[red]Risk gate: highest score {scores[0].score:.4f} >= threshold {fail_above}[/red]"
+        )
+        sys.exit(1)
 
 
 if __name__ == "__main__":

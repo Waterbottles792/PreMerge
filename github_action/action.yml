@@ -12,6 +12,10 @@ inputs:
     description: "Head branch being merged."
     required: false
     default: ${{ github.event.pull_request.head.ref }}
+  fail-above:
+    description: "Fail the check if the highest risk score meets or exceeds this value (0.0–1.0). Leave empty to run in report-only mode."
+    required: false
+    default: ""
 runs:
   using: "composite"
   steps:
@@ -29,11 +33,18 @@ runs:
       run: git fetch origin "${{ inputs.base-ref }}" "${{ inputs.head-ref }}"
     - name: Run PreMerge analysis
       shell: bash
-      run: >
-        premerge analyze
-        "origin/${{ inputs.base-ref }}"
-        "origin/${{ inputs.head-ref }}"
-        --json > premerge_report.json
+      run: |
+        FAIL_ARG=""
+        if [ -n "${{ inputs.fail-above }}" ]; then
+          FAIL_ARG="--fail-above ${{ inputs.fail-above }}"
+        fi
+        # Capture exit code so we can post the comment before failing the check.
+        premerge analyze \
+          "origin/${{ inputs.base-ref }}" \
+          "origin/${{ inputs.head-ref }}" \
+          --json $FAIL_ARG > premerge_report.json \
+          && echo "PREMERGE_GATE_PASSED=true" >> "$GITHUB_ENV" \
+          || echo "PREMERGE_GATE_PASSED=false" >> "$GITHUB_ENV"
     - name: Post PR comment
       shell: bash
       env:
@@ -42,3 +53,9 @@ runs:
         REPO: ${{ github.repository }}
         PR_NUMBER: ${{ github.event.pull_request.number }}
       run: python "${{ github.action_path }}/post_comment.py"
+    - name: Enforce risk gate
+      if: env.PREMERGE_GATE_PASSED == 'false'
+      shell: bash
+      run: |
+        echo "::error::PreMerge risk threshold (${{ inputs.fail-above }}) exceeded. See PR comment for details."
+        exit 1

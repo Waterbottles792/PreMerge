@@ -43,15 +43,19 @@ def merge_base(repo: str, ref_a: str, ref_b: str) -> str:
     return run_git(repo, "merge-base", ref_a, ref_b).strip()
 
 
-def commit_log_with_files(repo: str, rev: str = "HEAD") -> list[list[str]]:
+def commit_log_with_files(
+    repo: str, rev: str = "HEAD", max_count: int = 0
+) -> list[list[str]]:
     """Return, per commit (newest first), the list of files it touched.
 
     Merge commits are skipped (--no-merges): their diff is usually the union
     of both parents' work and would artificially inflate coupling scores.
     """
-    out = run_git(
-        repo, "log", "--no-merges", "--name-only", "--pretty=format:COMMIT:%H", rev
-    )
+    args = ["log", "--no-merges", "--name-only", "--pretty=format:COMMIT:%H"]
+    if max_count > 0:
+        args.append(f"--max-count={max_count}")
+    args.append(rev)
+    out = run_git(repo, *args)
     commits: list[list[str]] = []
     current_files: list[str] | None = None
     for line in out.splitlines():
