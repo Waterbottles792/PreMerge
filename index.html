@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PreMerge — Predict Merge Conflicts Before They Happen</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #0d1117;
+      --bg2:      #161b22;
+      --bg3:      #21262d;
+      --border:   #30363d;
+      --text:     #e6edf3;
+      --muted:    #8b949e;
+      --green:    #3fb950;
+      --yellow:   #d29922;
+      --red:      #f85149;
+      --blue:     #58a6ff;
+      --purple:   #bc8cff;
+      --mono:     'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+      --sans:     -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      line-height: 1.6;
+      font-size: 16px;
+    }
+
+    a { color: var(--blue); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* ── NAV ─────────────────────────────────────────── */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(13,17,23,0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      display: flex; align-items: center; justify-content: space-between;
+      height: 60px;
+    }
+
+    .nav-logo {
+      font-family: var(--mono);
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text);
+      display: flex; align-items: center; gap: 0.5rem;
+    }
+
+    .nav-logo span { color: var(--green); }
+
+    .nav-links { display: flex; gap: 1.5rem; align-items: center; }
+
+    .nav-links a {
+      color: var(--muted);
+      font-size: 0.9rem;
+      transition: color 0.15s;
+    }
+    .nav-links a:hover { color: var(--text); text-decoration: none; }
+
+    .btn {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      padding: 0.45rem 1rem;
+      border-radius: 6px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s;
+      border: none;
+    }
+    .btn:hover { opacity: 0.85; transform: translateY(-1px); text-decoration: none; }
+
+    .btn-primary { background: var(--green); color: #000; }
+    .btn-outline { background: transparent; color: var(--text); border: 1px solid var(--border); }
+    .btn-outline:hover { background: var(--bg3); }
+
+    /* ── HERO ─────────────────────────────────────────── */
+    .hero {
+      max-width: 1100px; margin: 0 auto;
+      padding: 5rem 2rem 4rem;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center;
+    }
+
+    @media (max-width: 768px) {
+      .hero { grid-template-columns: 1fr; padding: 3rem 1.5rem 2rem; gap: 2rem; }
+    }
+
+    .hero-eyebrow {
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      color: var(--green);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+    }
+
+    .hero h1 {
+      font-size: clamp(2rem, 4vw, 3rem);
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+      margin-bottom: 1.25rem;
+    }
+
+    .hero h1 em { font-style: normal; color: var(--green); }
+
+    .hero-sub {
+      color: var(--muted);
+      font-size: 1.1rem;
+      line-height: 1.7;
+      margin-bottom: 2rem;
+    }
+
+    .hero-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+
+    /* ── TERMINAL ─────────────────────────────────────── */
+    .terminal {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+
+    .terminal-bar {
+      background: var(--bg3);
+      padding: 0.6rem 1rem;
+      display: flex; align-items: center; gap: 0.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .dot { width: 12px; height: 12px; border-radius: 50%; }
+    .dot-r { background: #ff5f57; }
+    .dot-y { background: #febc2e; }
+    .dot-g { background: #28c840; }
+
+    .terminal-title {
+      margin-left: auto; margin-right: auto;
+      font-size: 0.75rem; color: var(--muted);
+    }
+
+    .terminal-body { padding: 1.25rem 1.25rem 1.5rem; line-height: 1.8; }
+
+    .t-prompt { color: var(--green); }
+    .t-cmd    { color: var(--text); }
+    .t-flag   { color: var(--blue); }
+    .t-dim    { color: var(--muted); }
+    .t-header { color: var(--purple); font-weight: bold; }
+    .t-green  { color: var(--green); }
+    .t-yellow { color: var(--yellow); }
+    .t-red    { color: var(--red); }
+    .t-box    { color: var(--border); }
+
+    /* ── SECTIONS ─────────────────────────────────────── */
+    section { padding: 5rem 2rem; }
+    .inner  { max-width: 1100px; margin: 0 auto; }
+
+    .section-label {
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      color: var(--green);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 0.75rem;
+    }
+
+    h2 {
+      font-size: clamp(1.6rem, 3vw, 2.2rem);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 1rem;
+    }
+
+    .section-sub {
+      color: var(--muted);
+      font-size: 1.05rem;
+      max-width: 600px;
+      margin-bottom: 3rem;
+      line-height: 1.7;
+    }
+
+    /* ── HOW IT WORKS ─────────────────────────────────── */
+    #how { background: var(--bg2); }
+
+    .signals {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;
+      margin-bottom: 3rem;
+    }
+
+    @media (max-width: 640px) { .signals { grid-template-columns: 1fr; } }
+
+    .signal-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.75rem;
+    }
+
+    .signal-card h3 {
+      font-size: 1rem; font-weight: 700;
+      margin-bottom: 0.5rem;
+      display: flex; align-items: center; gap: 0.5rem;
+    }
+
+    .signal-card p { color: var(--muted); font-size: 0.9rem; line-height: 1.6; }
+
+    .badge {
+      display: inline-block;
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      font-weight: 600;
+    }
+
+    .badge-green  { background: rgba(63,185,80,0.15);  color: var(--green); }
+    .badge-blue   { background: rgba(88,166,255,0.15); color: var(--blue);  }
+    .badge-purple { background: rgba(188,140,255,0.15);color: var(--purple);}
+
+    .formula-block {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.75rem;
+    }
+
+    .formula-block h3 {
+      font-size: 0.8rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 1rem;
+    }
+
+    .formula {
+      font-family: var(--mono);
+      font-size: 0.88rem;
+      line-height: 2;
+      color: var(--text);
+    }
+
+    .formula .var { color: var(--blue); }
+    .formula .op  { color: var(--muted); }
+    .formula .val { color: var(--green); }
+    .formula .comment { color: var(--muted); font-style: italic; }
+
+    /* ── FEATURES ─────────────────────────────────────── */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1.25rem;
+    }
+
+    .feature-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.5rem;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+
+    .feature-card:hover {
+      border-color: var(--green);
+      transform: translateY(-2px);
+    }
+
+    .feature-icon {
+      font-size: 1.5rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .feature-card h3 { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.4rem; }
+    .feature-card p  { color: var(--muted); font-size: 0.875rem; line-height: 1.6; }
+
+    /* ── INSTALL ──────────────────────────────────────── */
+    #install { background: var(--bg2); }
+
+    .install-tabs {
+      display: flex; gap: 0; margin-bottom: 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .tab-btn {
+      background: none; border: none; color: var(--muted);
+      font-family: var(--mono); font-size: 0.82rem;
+      padding: 0.6rem 1.2rem;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      transition: color 0.15s;
+    }
+
+    .tab-btn.active { color: var(--green); border-bottom-color: var(--green); }
+    .tab-btn:hover  { color: var(--text); }
+
+    .code-block {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-top: none;
+      border-radius: 0 0 10px 10px;
+      padding: 1.5rem;
+      font-family: var(--mono);
+      font-size: 0.82rem;
+      line-height: 1.9;
+      overflow-x: auto;
+    }
+
+    .code-block-standalone {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.5rem;
+      font-family: var(--mono);
+      font-size: 0.82rem;
+      line-height: 1.9;
+      overflow-x: auto;
+      margin-top: 1.5rem;
+    }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    .c-comment { color: var(--muted); }
+    .c-cmd     { color: var(--green); }
+    .c-str     { color: var(--yellow); }
+    .c-key     { color: var(--blue); }
+    .c-val     { color: var(--purple); }
+
+    /* ── ACTION ───────────────────────────────────────── */
+    .action-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; align-items: start;
+    }
+
+    @media (max-width: 768px) { .action-grid { grid-template-columns: 1fr; } }
+
+    .action-steps { display: flex; flex-direction: column; gap: 1.25rem; }
+
+    .step {
+      display: flex; gap: 1rem;
+    }
+
+    .step-num {
+      width: 28px; height: 28px; min-width: 28px;
+      border-radius: 50%;
+      background: rgba(63,185,80,0.15);
+      color: var(--green);
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .step-body h4 { font-size: 0.95rem; margin-bottom: 0.2rem; }
+    .step-body p  { font-size: 0.875rem; color: var(--muted); }
+
+    /* ── RISK TABLE DEMO ──────────────────────────────── */
+    .risk-demo {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      font-family: var(--mono);
+      font-size: 0.8rem;
+    }
+
+    .risk-demo-header {
+      background: var(--bg3);
+      padding: 0.5rem 1rem;
+      color: var(--muted);
+      font-size: 0.75rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .risk-table { width: 100%; border-collapse: collapse; }
+    .risk-table th {
+      text-align: left;
+      padding: 0.6rem 0.8rem;
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 0.75rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg3);
+    }
+
+    .risk-table td {
+      padding: 0.7rem 0.8rem;
+      border-bottom: 1px solid rgba(48,54,61,0.5);
+      font-size: 0.8rem;
+      vertical-align: top;
+    }
+
+    .risk-table tr:last-child td { border-bottom: none; }
+
+    .risk-score {
+      display: inline-flex; align-items: center; gap: 0.3rem;
+      font-weight: 700;
+    }
+
+    .risk-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+    }
+
+    /* ── TECH STACK ───────────────────────────────────── */
+    .stack-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1rem;
+    }
+
+    .stack-item {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      display: flex; align-items: center; gap: 0.75rem;
+    }
+
+    .stack-item-icon {
+      font-size: 1.3rem;
+      min-width: 1.5rem;
+      text-align: center;
+    }
+
+    .stack-item-text { font-size: 0.85rem; }
+    .stack-item-text strong { display: block; font-size: 0.9rem; margin-bottom: 0.1rem; }
+    .stack-item-text span   { color: var(--muted); font-size: 0.8rem; }
+
+    /* ── FOOTER ───────────────────────────────────────── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 2.5rem 2rem;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.875rem;
+    }
+
+    footer a { color: var(--muted); }
+    footer a:hover { color: var(--text); }
+
+    /* ── DIVIDER ──────────────────────────────────────── */
+    .divider {
+      height: 1px;
+      background: var(--border);
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    /* ── CURSOR BLINK ─────────────────────────────────── */
+    .cursor {
+      display: inline-block;
+      width: 8px; height: 1em;
+      background: var(--green);
+      vertical-align: text-bottom;
+      animation: blink 1s step-end infinite;
+    }
+
+    @keyframes blink { 50% { opacity: 0; } }
+
+    /* ── PILL ─────────────────────────────────────────── */
+    .pill {
+      display: inline-flex; align-items: center; gap: 0.3rem;
+      background: rgba(63,185,80,0.1);
+      border: 1px solid rgba(63,185,80,0.3);
+      color: var(--green);
+      border-radius: 999px;
+      padding: 0.25rem 0.75rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      margin-bottom: 1.25rem;
+    }
+
+    .pip-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
+  </style>
+</head>
+<body>
+
+<!-- ── NAV ── -->
+<nav>
+  <div class="nav-logo">
+    pre<span>merge</span>
+  </div>
+  <div class="nav-links">
+    <a href="#how">How it works</a>
+    <a href="#features">Features</a>
+    <a href="#install">Install</a>
+    <a href="#action">GitHub Action</a>
+    <a href="https://github.com/Waterbottles792/PreMerge" class="btn btn-outline" target="_blank">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+      GitHub
+    </a>
+  </div>
+</nav>
+
+<!-- ── HERO ── -->
+<div class="hero">
+  <div class="hero-text">
+    <div class="hero-eyebrow">Git Conflict Prediction</div>
+    <h1>Know about merge conflicts <em>before</em> they happen</h1>
+    <p class="hero-sub">
+      PreMerge scores the collision risk between any two branches using live diff analysis and learned historical coupling from your commit history.
+    </p>
+    <div class="hero-actions">
+      <a href="#install" class="btn btn-primary">Get started</a>
+      <a href="https://github.com/Waterbottles792/PreMerge" class="btn btn-outline" target="_blank">View on GitHub</a>
+    </div>
+  </div>
+
+  <div class="terminal" role="img" aria-label="PreMerge terminal demo">
+    <div class="terminal-bar">
+      <div class="dot dot-r"></div>
+      <div class="dot dot-y"></div>
+      <div class="dot dot-g"></div>
+      <span class="terminal-title">bash</span>
+    </div>
+    <div class="terminal-body">
+      <div><span class="t-prompt">$ </span><span class="t-cmd">premerge analyze <span class="t-flag">--base</span> main</span></div>
+      <div class="t-dim" style="margin: 0.4rem 0 0.6rem;">Building coupling matrix from git history…</div>
+      <div class="t-header" style="text-align:center; margin-bottom:0.4rem;">PreMerge Conflict Risk Report</div>
+      <div class="t-box">┏━━━━━━━━━━━┳━━━━━━━━━━━┳━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓</div>
+      <div class="t-box">┃ <span class="t-dim">Branch A  </span>┃ <span class="t-dim">Branch B  </span>┃ <span class="t-dim">Risk </span>┃ <span class="t-dim">Why                              </span>┃</div>
+      <div class="t-box">┡━━━━━━━━━━━╇━━━━━━━━━━━╇━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩</div>
+      <div class="t-box">│ <span class="t-cmd">main     </span> │ <span class="t-cmd">feature-a</span> │ <span class="t-red">0.82 </span>│ <span class="t-dim">auth.py: overlapping lines       </span>│</div>
+      <div class="t-box">│ <span class="t-cmd">main     </span> │ <span class="t-cmd">feature-b</span> │ <span class="t-yellow">0.31 </span>│ <span class="t-dim">auth.py ↔ session.py coupling=1.0</span>│</div>
+      <div class="t-box">│ <span class="t-cmd">main     </span> │ <span class="t-cmd">chore/ci </span> │ <span class="t-green">0.04 </span>│ <span class="t-dim">no overlap or coupling detected  </span>│</div>
+      <div class="t-box">└───────────┴───────────┴──────┴──────────────────────────────────┘</div>
+      <div style="margin-top:0.5rem"><span class="t-dim">🔴 ≥0.5 high  🟡 ≥0.2 medium  🟢 low</span><span class="cursor"></span></div>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ── HOW IT WORKS ── -->
+<section id="how">
+  <div class="inner">
+    <div class="section-label">Under the hood</div>
+    <h2>Two signals, one score</h2>
+    <p class="section-sub">
+      PreMerge runs two independent analyses on every branch pair, then combines them into a single weighted risk score with a plain-English explanation.
+    </p>
+
+    <div class="signals">
+      <div class="signal-card">
+        <h3><span class="badge badge-green">Signal 1</span> Direct Overlap</h3>
+        <p>
+          Both branches are diffed against their <strong>common merge-base</strong> using <code>git diff -U0</code>.
+          PreMerge parses every hunk header and checks whether the line ranges intersect.
+          This catches both file-level and line-level conflicts — the same thing git would find at merge time.
+        </p>
+      </div>
+      <div class="signal-card">
+        <h3><span class="badge badge-purple">Signal 2</span> Historical Coupling</h3>
+        <p>
+          PreMerge walks your entire commit history and builds a co-occurrence matrix: which files always change together?
+          It scores every file pair using <strong>Jaccard similarity</strong> — if branch A touched <code>auth.py</code> and branch B touched <code>session.py</code>, and those two files co-change in 9 of 10 commits, that's a hidden conflict.
+        </p>
+      </div>
+    </div>
+
+    <div class="formula-block">
+      <h3>Scoring formula</h3>
+      <div class="formula">
+        <span class="var">risk</span><span class="op">(A, B)</span> = <span class="val">0.5</span> × <span class="var">line_overlap_score</span>    <span class="comment"># do they edit the same lines?</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; + <span class="val">0.3</span> × <span class="var">file_overlap_score</span>    <span class="comment"># do they touch the same files?</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; + <span class="val">0.2</span> × <span class="var">coupling_score</span>         <span class="comment"># do they touch files that co-change?</span>
+      </div>
+      <p style="margin-top:1rem; color:var(--muted); font-size:0.85rem;">
+        All three weights are tunable in <code>premerge.config.json</code>. The formula is transparent — you can always see exactly why a pair scored what it scored.
+      </p>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ── FEATURES ── -->
+<section id="features">
+  <div class="inner">
+    <div class="section-label">What you get</div>
+    <h2>Everything in one command</h2>
+    <p class="section-sub">No setup, no external services, no accounts required.</p>
+
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">🔍</div>
+        <h3>Line-level conflict detection</h3>
+        <p>Parses <code>git diff -U0</code> hunk headers to find branches editing intersecting line ranges — not just the same file.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🧠</div>
+        <h3>Hidden coupling detection</h3>
+        <p>Catches logical conflicts with zero textual overlap. If two files always change together in history, PreMerge flags them — even when git wouldn't.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">⚡</div>
+        <h3>SQLite cache</h3>
+        <p>Coupling analysis is cached by HEAD commit hash. Unchanged history = instant re-runs. CI warm runs complete in under a second.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🚦</div>
+        <h3>CI risk gate</h3>
+        <p><code>--fail-above 0.6</code> exits 1 when any pair exceeds the threshold. Turns PreMerge from a report into a hard pipeline gate.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">💬</div>
+        <h3>Plain-English explanations</h3>
+        <p>Every score comes with a reason: which file, which lines, which historical pair triggered it. No black box.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🎛️</div>
+        <h3>Tunable weights</h3>
+        <p>Adjust the three signal weights in <code>premerge.config.json</code>. Or use <code>--depth</code> to limit history on large repos.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">📦</div>
+        <h3>Minimal footprint</h3>
+        <p>Two runtime dependencies: <code>click</code> and <code>rich</code>. Git is driven via subprocess. GitHub API via stdlib <code>urllib</code>.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🐳</div>
+        <h3>Docker ready</h3>
+        <p>Mount any repo into the container and run — no Python setup needed. The image bundles Python, git, and the CLI.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">🔬</div>
+        <h3>Hermetic test suite</h3>
+        <p>Tests build real throwaway git repos in temp directories. No fixtures on disk, no network. Works on any machine.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ── INSTALL ── -->
+<section id="install">
+  <div class="inner">
+    <div class="section-label">Get started</div>
+    <h2>Up in 30 seconds</h2>
+    <p class="section-sub">Requires Python 3.11+ and <code>git</code> on your PATH.</p>
+
+    <div style="background:var(--bg); border:1px solid var(--border); border-radius:10px 10px 0 0; overflow:hidden;">
+      <div class="install-tabs">
+        <button class="tab-btn active" onclick="switchTab(event,'pip')">pip</button>
+        <button class="tab-btn" onclick="switchTab(event,'docker')">Docker</button>
+        <button class="tab-btn" onclick="switchTab(event,'action-tab')">GitHub Action</button>
+      </div>
+    </div>
+
+    <div id="tab-pip" class="tab-panel active">
+      <div class="code-block">
+        <div><span class="c-comment"># clone and install</span></div>
+        <div><span class="c-cmd">git clone</span> https://github.com/Waterbottles792/PreMerge.git</div>
+        <div><span class="c-cmd">cd</span> PreMerge &amp;&amp; <span class="c-cmd">pip install -e .</span></div>
+        <br>
+        <div><span class="c-comment"># analyze every branch pair in your repo</span></div>
+        <div><span class="c-cmd">premerge analyze</span></div>
+        <br>
+        <div><span class="c-comment"># all branches vs main</span></div>
+        <div><span class="c-cmd">premerge analyze</span> <span class="c-key">--base</span> main</div>
+        <br>
+        <div><span class="c-comment"># one specific pair</span></div>
+        <div><span class="c-cmd">premerge analyze</span> feature-a feature-b</div>
+        <br>
+        <div><span class="c-comment"># CI gate: exit 1 if any pair scores >= 0.6</span></div>
+        <div><span class="c-cmd">premerge analyze</span> <span class="c-key">--base</span> main <span class="c-key">--fail-above</span> <span class="c-val">0.6</span></div>
+        <br>
+        <div><span class="c-comment"># limit history depth on large repos</span></div>
+        <div><span class="c-cmd">premerge analyze</span> <span class="c-key">--depth</span> <span class="c-val">1000</span></div>
+      </div>
+    </div>
+
+    <div id="tab-docker" class="tab-panel">
+      <div class="code-block">
+        <div><span class="c-comment"># build the image once</span></div>
+        <div><span class="c-cmd">docker build</span> -t premerge .</div>
+        <br>
+        <div><span class="c-comment"># mount any repo and analyze</span></div>
+        <div><span class="c-cmd">docker run</span> --rm -v <span class="c-str">"$(pwd)"</span>:/repo premerge analyze <span class="c-key">--repo</span> /repo</div>
+        <br>
+        <div><span class="c-comment"># any other repo on disk</span></div>
+        <div><span class="c-cmd">docker run</span> --rm -v /path/to/other/repo:/repo premerge analyze <span class="c-key">--repo</span> /repo</div>
+      </div>
+    </div>
+
+    <div id="tab-action-tab" class="tab-panel">
+      <div class="code-block">
+        <div><span class="c-comment"># .github/workflows/premerge.yml</span></div>
+        <div><span class="c-key">name:</span> <span class="c-str">PreMerge Conflict Risk Check</span></div>
+        <br>
+        <div><span class="c-key">on:</span></div>
+        <div>&nbsp;&nbsp;<span class="c-key">pull_request:</span></div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="c-key">types:</span> [opened, synchronize, reopened]</div>
+        <br>
+        <div><span class="c-key">jobs:</span></div>
+        <div>&nbsp;&nbsp;<span class="c-key">premerge:</span></div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="c-key">runs-on:</span> ubuntu-latest</div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="c-key">permissions:</span></div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="c-key">pull-requests:</span> write</div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="c-key">steps:</span></div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="c-key">uses:</span> actions/checkout@v4</div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="c-key">uses:</span> Waterbottles792/PreMerge/github_action@main</div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="c-key">with:</span></div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="c-key">github-token:</span> <span class="c-str">${{ secrets.GITHUB_TOKEN }}</span></div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="c-comment"># fail-above: "0.6"  # optional risk gate</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ── GITHUB ACTION ── -->
+<section id="action">
+  <div class="inner">
+    <div class="section-label">CI/CD Integration</div>
+    <h2>Automated conflict prediction on every PR</h2>
+    <p class="section-sub">Add three lines to your workflow and PreMerge posts a risk report on every pull request — and updates it in place on every push.</p>
+
+    <div class="action-grid">
+      <div class="action-steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <h4>PR opened or updated</h4>
+            <p>The action triggers on <code>opened</code>, <code>synchronize</code>, and <code>reopened</code> events.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <h4>Analysis runs</h4>
+            <p>PreMerge fetches both branches and runs the full two-signal analysis. JSON output is written to disk.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <h4>Comment is posted</h4>
+            <p>A formatted risk table is posted to the PR. On subsequent pushes, the <em>same</em> comment is updated — no spam.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <h4>Gate fires (optional)</h4>
+            <p>If <code>fail-above</code> is set and the threshold is exceeded, the check fails <em>after</em> posting the comment — so developers always see the full report.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="risk-demo">
+        <div class="risk-demo-header">PR #42 · PreMerge Conflict Risk Report</div>
+        <table class="risk-table">
+          <thead>
+            <tr>
+              <th>Branch A</th>
+              <th>Branch B</th>
+              <th>Risk</th>
+              <th>Why</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>main</td>
+              <td>feature/auth</td>
+              <td><span class="risk-score"><span class="risk-dot" style="background:var(--red)"></span><span style="color:var(--red)">0.82</span></span></td>
+              <td style="color:var(--muted); font-size:0.75rem;">auth.py: both branches edit overlapping lines</td>
+            </tr>
+            <tr>
+              <td>main</td>
+              <td>fix/session</td>
+              <td><span class="risk-score"><span class="risk-dot" style="background:var(--yellow)"></span><span style="color:var(--yellow)">0.31</span></span></td>
+              <td style="color:var(--muted); font-size:0.75rem;">auth.py ↔ session.py: coupling=1.00</td>
+            </tr>
+            <tr>
+              <td>main</td>
+              <td>chore/deps</td>
+              <td><span class="risk-score"><span class="risk-dot" style="background:var(--green)"></span><span style="color:var(--green)">0.04</span></span></td>
+              <td style="color:var(--muted); font-size:0.75rem;">no overlap or coupling detected</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ── TECH STACK ── -->
+<section id="stack">
+  <div class="inner">
+    <div class="section-label">Tech stack</div>
+    <h2>Built to stay lean</h2>
+    <p class="section-sub">No database server, no cloud services, no account required. Everything runs locally or in the CI runner.</p>
+
+    <div class="stack-grid">
+      <div class="stack-item">
+        <div class="stack-item-icon">🐍</div>
+        <div class="stack-item-text"><strong>Python 3.11+</strong><span>Only runtime required</span></div>
+      </div>
+      <div class="stack-item">
+        <div class="stack-item-icon">⌨️</div>
+        <div class="stack-item-text"><strong>click</strong><span>CLI framework</span></div>
+      </div>
+      <div class="stack-item">
+        <div class="stack-item-icon">✨</div>
+        <div class="stack-item-text"><strong>rich</strong><span>Terminal tables &amp; colour</span></div>
+      </div>
+      <div class="stack-item">
+        <div class="stack-item-icon">🗄️</div>
+        <div class="stack-item-text"><strong>SQLite</strong><span>Local coupling cache</span></div>
+      </div>
+      <div class="stack-item">
+        <div class="stack-item-icon">🔧</div>
+        <div class="stack-item-text"><strong>git CLI</strong><span>Via subprocess, no GitPython</span></div>
+      </div>
+      <div class="stack-item">
+        <div class="stack-item-icon">🐳</div>
+        <div class="stack-item-text"><strong>Docker</strong><span>python:3.13-slim image</span></div>
+      </div>
+      <div class="stack-item">
+        <div class="stack-item-icon">⚙️</div>
+        <div class="stack-item-text"><strong>GitHub Actions</strong><span>Tests + dogfood CI</span></div>
+      </div>
+      <div class="stack-item">
+        <div class="stack-item-icon">🧹</div>
+        <div class="stack-item-text"><strong>ruff</strong><span>Lint gate in CI</span></div>
+      </div>
+      <div class="stack-item">
+        <div class="stack-item-icon">🧪</div>
+        <div class="stack-item-text"><strong>pytest</strong><span>Hermetic test suite</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ── FOOTER ── -->
+<footer>
+  <p style="margin-bottom:0.5rem;">
+    Built by <a href="https://github.com/Waterbottles792" target="_blank">@Waterbottles792</a> &
+    <a href="https://github.com/kanika10-hub" target="_blank">@kanika10-hub</a>
+    · Semester 5 Software Engineering Project
+  </p>
+  <p>
+    <a href="https://github.com/Waterbottles792/PreMerge" target="_blank">GitHub</a>
+    &nbsp;·&nbsp;
+    <a href="https://github.com/Waterbottles792/PreMerge/blob/main/README.md" target="_blank">Docs</a>
+    &nbsp;·&nbsp;
+    <a href="https://github.com/Waterbottles792/PreMerge/blob/main/CONTRIBUTING.md" target="_blank">Contributing</a>
+  </p>
+</footer>
+
+<script>
+  function switchTab(e, id) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    e.target.classList.add('active');
+    document.getElementById('tab-' + id).classList.add('active');
+  }
+</script>
+
+</body>
+</html>
